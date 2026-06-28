@@ -349,7 +349,7 @@ INSERT INTO `settings` VALUES ('epay_key', '', 'payment');
 INSERT INTO `settings` VALUES ('epay_pid', '', 'payment');
 INSERT INTO `settings` VALUES ('epay_type', 'alipay', 'payment');
 INSERT INTO `settings` VALUES ('epay_url', '', 'payment');
-INSERT INTO `settings` VALUES ('footer_links', '[{\"name\":\"百度一下\",\"url\":\"https://www.baidu.com/\"},{\"name\":\"百度一下\",\"url\":\"https://www.baidu.com/\"}]', 'basic');
+INSERT INTO `settings` VALUES ('footer_links', '[{\"name\":\"开源地址\",\"url\":\"https://github.com/xuexi981/tempweb\"},{\"name\":\"开源地址\",\"url\":\"https://github.com/xuexi981/tempweb\"}]', 'basic');
 INSERT INTO `settings` VALUES ('hotlink_whitelist', '', 'security');
 INSERT INTO `settings` VALUES ('invite_required', '0', 'basic');
 INSERT INTO `settings` VALUES ('login_lock_count', '5', 'security');
