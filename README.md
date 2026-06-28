@@ -1,6 +1,10 @@
 # tempweb
 TempWeb 是一个静态网站托管平台源码
 # TempWeb 搭建部署指南
+![预览图1](tempweb.jpg)
+![预览图2](tempweb2.jpg)
+![预览图3](tempweb3.jpg)
+网络技术交流群:518822484
 
 ## 一、环境要求
 
@@ -32,8 +36,6 @@ TempWeb 是一个静态网站托管平台源码
    cd /www/wwwroot
    git clone https://github.com/xxx/tempweb.git tempweb.example.com
    ```
-
-
 
 ### 2.4 配置伪静态
 
