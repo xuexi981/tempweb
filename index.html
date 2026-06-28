@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TempWeb - 开源免费临时HTML/ZIP托管平台</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="/assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+<!-- 导航栏 -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+  <div class="container" style="max-width:1200px">
+    <a class="navbar-brand fw-bold" href="/index.html">
+      <span class="brand-icon">T</span> <span id="nav-site-name">TempWeb</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" href="/index.html">首页</a></li>
+        <li class="nav-item"><a class="nav-link" href="/projects.html">我的作品</a></li>
+        <li class="nav-item"><a class="nav-link" href="/square.html">作品广场</a></li>
+      </ul>
+      <div class="d-flex align-items-center gap-2" id="nav-auth">
+        <!-- JS动态填充 -->
+      </div>
+    </div>
+  </div>
+</nav>
+
+
+<!-- 紧凑Hero条 -->
+<section class="hero-bar">
+  <div class="container" style="max-width:1200px">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h1 class="hero-title" id="hero-title">TempWeb</h1>
+        <p class="hero-desc" id="hero-desc">轻量级临时HTML/ZIP托管平台，一键上传，即刻访问</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 主体：上传 + 侧边信息 -->
+<div class="container py-3" style="max-width:1200px" id="upload-section">
+  <div class="row g-4">
+    <!-- 左侧：上传区 -->
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-lg">
+        <div class="card-body p-4">
+          <h5 class="fw-bold mb-3"><i class="bi bi-cloud-arrow-up me-2 text-primary"></i>快速上传</h5>
+          <ul class="nav nav-tabs mb-3" id="uploadTab" role="tablist">
+            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-html"><i class="bi bi-code-slash me-1"></i>粘贴代码</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-zip"><i class="bi bi-file-earmark-zip me-1"></i>上传ZIP</a></li>
+          </ul>
+          <div class="tab-content">
+            <div class="tab-pane fade show active" id="tab-html">
+              <textarea class="form-control font-monospace" id="html-content" rows="8" placeholder="在此粘贴HTML代码..."></textarea>
+            </div>
+            <div class="tab-pane fade" id="tab-zip">
+              <div class="upload-drop-zone" id="drop-zone">
+                <i class="bi bi-cloud-arrow-up display-5 text-muted"></i>
+                <p class="mt-3 mb-1 fw-bold text-dark fs-5">拖拽ZIP文件到此处</p>
+                <p class="text-muted small mb-0">或点击选择文件，支持HTML/HTM/CSS/JS等文件</p>
+                <input type="file" id="zip-file" accept=".zip" class="d-none">
+                <div id="file-info" class="mt-3 text-primary fw-bold" style="display:none"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 基础设置行 -->
+          <div class="row g-2 mt-3">
+            <div class="col-md-6">
+              <input type="text" class="form-control" id="project-name" placeholder="作品名称 *">
+            </div>
+            <div class="col-md-3">
+              <select class="form-select" id="project-expires">
+                <option value="0">默认</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <button class="btn btn-outline-secondary btn-sm w-100 h-100" type="button" data-bs-toggle="collapse" data-bs-target="#advanced-settings">
+                <i class="bi bi-gear me-1"></i>高级
+              </button>
+            </div>
+          </div>
+
+          <!-- 高级设置 -->
+          <div class="collapse mt-2" id="advanced-settings">
+            <div class="row g-2">
+              <div class="col-md-6"><input type="text" class="form-control form-control-sm" id="project-desc" placeholder="作品描述"></div>
+              <div class="col-md-6"><input type="text" class="form-control form-control-sm" id="project-tags" placeholder="标签，逗号分隔"></div>
+              <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="project-custom-code" placeholder="自定义短码"></div>
+              <div class="col-md-4"><input type="password" class="form-control form-control-sm" id="project-password" placeholder="访问密码"></div>
+              <div class="col-md-4 d-flex align-items-center">
+                <div class="form-check form-switch form-check-sm mb-0">
+                  <input class="form-check-input" type="checkbox" id="project-public">
+                  <label class="form-check-label small text-muted" for="project-public">公开作品</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-grid mt-3">
+            <button class="btn btn-primary" id="btn-upload" onclick="doUpload()">
+              <i class="bi bi-rocket-takeoff me-1"></i>发布作品
+            </button>
+          </div>
+          <div class="text-center mt-2 text-muted small" id="guest-hint" style="display:none">
+            注册账号可管理作品、自定义过期时间 <a href="/register.html">立即注册</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：信息面板 -->
+    <div class="col-lg-4">
+      <!-- 使用说明 -->
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-3">
+          <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-1 text-primary"></i>使用说明</h6>
+          <ul class="list-unstyled small text-muted mb-0">
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>支持直接粘贴HTML代码</li>
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>支持上传ZIP压缩包</li>
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>自动生成短链接分享</li>
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>到期自动清理释放空间</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i>会员可去除水印/设置密码</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 快捷入口 -->
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-3">
+          <h6 class="fw-bold mb-3"><i class="bi bi-grid-3x3-gap me-1 text-primary"></i>快捷入口</h6>
+          <div class="d-grid gap-2">
+            <a href="/projects.html" class="btn btn-outline-primary"><i class="bi bi-folder me-2"></i>我的作品</a>
+            <a href="/square.html" class="btn btn-outline-success"><i class="bi bi-grid-3x3-gap me-2"></i>作品广场</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 登录提示 -->
+      <div class="card border-0 shadow-sm" id="login-tip-card">
+        <div class="card-body p-3 text-center">
+          <i class="bi bi-person-circle display-5 text-muted"></i>
+          <p class="small text-muted mt-2 mb-2">登录后可管理作品、查看访问统计</p>
+          <a href="/login.html" class="btn btn-primary w-100">登录 / 注册</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 特性展示 -->
+  <div class="row g-4 mt-4">
+    <div class="col-md-4">
+      <div class="feature-mini h-100">
+        <div class="icon"><i class="bi bi-lightning-charge-fill"></i></div>
+        <h6 class="fw-bold">免登录即用</h6>
+        <p>无需注册，粘贴代码或上传ZIP即刻生成分享链接</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-mini h-100">
+        <div class="icon" style="background: linear-gradient(135deg, #2080f0, #7ab8ff);"><i class="bi bi-clock-history"></i></div>
+        <h6 class="fw-bold">自动过期清理</h6>
+        <p>作品到期自动清理，无需手动管理，节省存储空间</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-mini h-100">
+        <div class="icon" style="background: linear-gradient(135deg, #8b5cf6, #c4b5fd);"><i class="bi bi-shield-lock-fill"></i></div>
+        <h6 class="fw-bold">私有化部署</h6>
+        <p>完全开源MIT协议，数据自主可控，所有配置后台可改</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 页脚 -->
+<footer class="py-2 text-muted border-top">
+  <div class="container" style="max-width:1200px">
+    <div id="footer-links" class="small text-center"></div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/assets/js/api.js"></script>
+<script src="/assets/js/app.js"></script>
+<script>
+// 加载站点信息
+loadSiteInfo().then(info => {
+  const name = info.site_name || 'TempWeb';
+  document.title = name + ' - ' + (info.site_desc || '开源免费临时HTML/ZIP托管平台');
+  document.getElementById('nav-site-name').textContent = name;
+  document.getElementById('hero-title').textContent = name;
+  document.getElementById('hero-desc').textContent = info.site_desc || '轻量级临时HTML/ZIP托管平台，一键上传，即刻访问';
+  if (!getToken()) document.getElementById('guest-hint').style.display = '';
+
+  // 根据用户身份设置过期天数选项
+  const token = getToken();
+  let defaultExpire, canPermanent = false;
+  if (token) {
+    // 登录用户，获取用户信息判断会员
+    apiGet('/api/auth.php?action=me').then(uRes => {
+      if (uRes.code === 0) {
+        const u = uRes.data;
+        const isMember = u.role === 'admin' || u.role === 'member';
+        if (isMember) {
+          defaultExpire = parseInt(info.default_expire_member || 30);
+          canPermanent = true;
+        } else {
+          defaultExpire = parseInt(info.default_expire || 7);
+        }
+      } else {
+        defaultExpire = parseInt(info.default_expire_guest || 7);
+      }
+      populateExpires(defaultExpire, canPermanent);
+    }).catch(() => {
+      defaultExpire = parseInt(info.default_expire_guest || 7);
+      populateExpires(defaultExpire, canPermanent);
+    });
+  } else {
+    defaultExpire = parseInt(info.default_expire_guest || 7);
+    populateExpires(defaultExpire, canPermanent);
+  }
+
+  // 加载友链（显示在页脚）
+  if (info.footer_links) {
+    try {
+      const links = JSON.parse(info.footer_links);
+      if (links && links.length) {
+        document.getElementById('footer-links').innerHTML = '<span class="text-muted me-2">友情链接:</span>' + links.map(l => `<a href="${l.url}" target="_blank" class="text-muted me-3">${l.name}</a>`).join('');
+      }
+    } catch (e) {}
+  }
+});
+
+// 填充过期天数选项
+function populateExpires(defaultExpire, canPermanent) {
+  const sel = document.getElementById('project-expires');
+  const options = [`<option value="0">默认(${defaultExpire}天)</option>`];
+  if (canPermanent) options.push(`<option value="-1">永不过期</option>`);
+  sel.innerHTML = options.join('');
+}
+
+// 加载统计
+apiGet('/api/admin.php?action=site_info').then(d => {
+  if (d.code === 0) {
+    document.getElementById('stat-projects').textContent = d.data.project_count || 0;
+    document.getElementById('stat-visits').textContent = d.data.visit_count || 0;
+  }
+}).catch(() => {});
+
+// 登录态隐藏登录提示
+if (getToken()) {
+  document.getElementById('login-tip-card').style.display = 'none';
+}
+
+// 拖拽上传
+const dropZone = document.getElementById('drop-zone');
+const zipInput = document.getElementById('zip-file');
+dropZone.addEventListener('click', () => zipInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files.length) { zipInput.files = e.dataTransfer.files; showFileInfo(); }
+});
+zipInput.addEventListener('change', showFileInfo);
+
+function showFileInfo() {
+  const f = zipInput.files[0];
+  if (f) { document.getElementById('file-info').textContent = f.name + ' (' + (f.size / 1048576).toFixed(1) + ' MB)'; document.getElementById('file-info').style.display = ''; }
+}
+
+// 上传
+async function doUpload() {
+  const btn = document.getElementById('btn-upload');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>上传中...';
+
+  const name = document.getElementById('project-name').value.trim();
+  if (!name) { showAlert('提示', '请输入作品名称'); btn.disabled = false; btn.innerHTML = '<i class="bi bi-rocket-takeoff me-1"></i>发布作品'; return; }
+
+  const activeTab = document.querySelector('.tab-pane.active').id;
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('description', document.getElementById('project-desc').value.trim());
+  formData.append('tags', document.getElementById('project-tags').value.trim());
+  formData.append('expires', document.getElementById('project-expires').value);
+  formData.append('custom_code', document.getElementById('project-custom-code').value.trim());
+  formData.append('project_password', document.getElementById('project-password').value);
+  formData.append('is_public', document.getElementById('project-public').checked ? 1 : 0);
+
+  try {
+    let result;
+    if (activeTab === 'tab-html') {
+      const content = document.getElementById('html-content').value.trim();
+      if (!content) { showAlert('提示', '请输入HTML代码'); throw new Error('empty'); }
+      formData.append('content_type', 'html');
+      formData.append('content', content);
+      result = await apiUpload('/api/projects.php?action=upload', formData);
+    } else {
+      const file = zipInput.files[0];
+      if (!file) { showAlert('提示', '请选择ZIP文件'); throw new Error('empty'); }
+      formData.append('content_type', 'zip');
+      formData.append('file', file);
+      result = await apiUpload('/api/projects.php?action=upload', formData);
+    }
+
+    if (result.code === 0) {
+      window.location.href = '/success.html?code=' + result.data.short_code;
+    } else {
+      showAlert('上传失败', result.message || '上传失败');
+    }
+  } catch (e) {
+    if (e.message !== 'empty') showAlert('上传失败', e.message);
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="bi bi-rocket-takeoff me-1"></i>发布作品';
+  }
+}
+</script>
+</body>
+</html>

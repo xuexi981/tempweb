@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>作品详情 - TempWeb</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css" rel="stylesheet">
+<link href="/assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+  <div class="container" style="max-width:1200px">
+    <a class="navbar-brand fw-bold" href="/index.html"><span class="brand-icon">T</span> <span id="nav-site-name">TempWeb</span></a>
+    <div class="d-flex align-items-center gap-2" id="nav-auth"></div>
+  </div>
+</nav>
+
+<div class="container py-4" style="max-width:960px">
+  <a href="/projects.html" class="text-decoration-none small"><i class="bi bi-arrow-left me-1"></i>返回作品列表</a>
+
+  <div id="project-content" class="mt-3">
+    <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+  </div>
+</div>
+
+<!-- 编辑弹窗 -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">编辑作品</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-3"><label class="form-label">名称</label><input type="text" class="form-control" id="edit-name"></div>
+        <div class="mb-3"><label class="form-label">描述</label><textarea class="form-control" id="edit-desc" rows="3"></textarea></div>
+        <div class="mb-3"><label class="form-label">标签</label><input type="text" class="form-control" id="edit-tags" placeholder="逗号分隔"></div>
+        <div class="mb-3"><label class="form-label">访问密码</label><input type="text" class="form-control" id="edit-password" placeholder="留空则无密码"><small class="text-muted">会员功能</small></div>
+        <div class="mb-3 form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="edit-permanent">
+          <label class="form-check-label" for="edit-permanent">永久保存</label>
+          <small class="text-muted d-block" id="edit-permanent-hint">会员功能，非会员无法设置永久</small>
+        </div>
+        <div class="mb-3 form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="edit-public">
+          <label class="form-check-label" for="edit-public">公开作品</label>
+          <small class="text-muted d-block">开启后作品将显示在作品广场</small>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button class="btn btn-primary" onclick="doUpdate()">保存</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- 编辑HTML弹窗 -->
+<div class="modal fade" id="htmlModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header d-flex justify-content-between align-items-center">
+        <h5 class="modal-title">在线编辑HTML</h5>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary btn-sm" onclick="toggleHtmlPreview()" id="btn-preview"><i class="bi bi-eye me-1"></i>预览</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="toggleFullscreen()" id="btn-fullscreen"><i class="bi bi-arrows-fullscreen me-1"></i>全屏</button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+      </div>
+      <div class="modal-body p-0">
+        <div id="code-editor-container" style="height:400px;"></div>
+        <div id="code-preview-container" style="height:400px;display:none;overflow:auto;padding:20px;background:#fff;">
+          <iframe id="html-preview-frame" style="width:100%;height:100%;border:none;"></iframe>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span class="me-auto text-muted small" id="editor-status"></span>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        <button class="btn btn-primary" onclick="doSaveHtml()"><i class="bi bi-check2 me-1"></i>保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/xml/xml.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/css/css.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="/assets/js/api.js"></script>
+<script src="/assets/js/app.js"></script>
+<script>
+let projectId = null;
+let projectData = null;
+let codeEditor = null;
+let isFullscreen = false;
+let isPreview = false;
+let siteInfo = {};
+
+function toggleFullscreen() {
+  const modalDialog = document.querySelector('#htmlModal .modal-dialog');
+  const btn = document.getElementById('btn-fullscreen');
+  const editorContainer = document.getElementById('code-editor-container');
+  const previewContainer = document.getElementById('code-preview-container');
+  isFullscreen = !isFullscreen;
+  if (isFullscreen) {
+    modalDialog.classList.add('modal-fullscreen');
+    btn.innerHTML = '<i class="bi bi-arrows-collapse me-1"></i>退出全屏';
+    editorContainer.style.height = 'calc(100vh - 140px)';
+    previewContainer.style.height = 'calc(100vh - 140px)';
+  } else {
+    modalDialog.classList.remove('modal-fullscreen');
+    btn.innerHTML = '<i class="bi bi-arrows-fullscreen me-1"></i>全屏';
+    editorContainer.style.height = '400px';
+    previewContainer.style.height = '400px';
+  }
+  if (codeEditor) setTimeout(() => codeEditor.refresh(), 100);
+}
+
+function toggleHtmlPreview() {
+  const editorContainer = document.getElementById('code-editor-container');
+  const previewContainer = document.getElementById('code-preview-container');
+  const previewFrame = document.getElementById('html-preview-frame');
+  const btn = document.getElementById('btn-preview');
+  isPreview = !isPreview;
+  if (isPreview) {
+    editorContainer.style.display = 'none';
+    previewContainer.style.display = 'block';
+    btn.innerHTML = '<i class="bi bi-code-slash me-1"></i>编辑';
+    const content = codeEditor ? codeEditor.getValue() : '';
+    if (previewFrame.contentDocument) {
+      previewFrame.contentDocument.open();
+      previewFrame.contentDocument.write(content);
+      previewFrame.contentDocument.close();
+    }
+  } else {
+    editorContainer.style.display = 'block';
+    previewContainer.style.display = 'none';
+    btn.innerHTML = '<i class="bi bi-eye me-1"></i>预览';
+    if (codeEditor) setTimeout(() => codeEditor.refresh(), 100);
+  }
+}
+
+function updateEditorStatus() {
+  const statusEl = document.getElementById('editor-status');
+  if (!statusEl || !codeEditor) return;
+  const content = codeEditor.getValue();
+  const lines = content.split('\n').length;
+  const chars = content.length;
+  statusEl.textContent = `行数: ${lines} | 字符: ${chars}`;
+}
+
+function initHtmlEditor(content) {
+  const container = document.getElementById('code-editor-container');
+  container.innerHTML = '';
+  codeEditor = CodeMirror(container, {
+    value: content,
+    mode: 'htmlmixed',
+    lineNumbers: true,
+    lineWrapping: true,
+    indentUnit: 2,
+    tabSize: 2,
+  });
+  codeEditor.setSize('100%', '100%');
+  codeEditor.on('change', updateEditorStatus);
+  updateEditorStatus();
+  setTimeout(() => codeEditor.refresh(), 100);
+}
+
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML.replace(/'/g, '&#39;'); }
+
+async function loadProject() {
+  projectId = new URLSearchParams(window.location.search).get('id');
+  if (!projectId) window.location.href = '/projects.html';
+
+  const res = await apiGet('/api/projects.php?action=detail&id=' + projectId);
+  if (res.code !== 0) { document.getElementById('project-content').innerHTML = '<div class="alert alert-danger">作品不存在</div>'; return; }
+  projectData = res.data;
+  renderProject();
+}
+
+function renderProject() {
+  const p = projectData;
+  document.getElementById('project-content').innerHTML = `
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <i class="bi bi-file-earmark-code fs-1 text-muted"></i>
+          <div>
+            <h4 class="fw-bold mb-1">${escHtml(p.name)}</h4>
+            <div class="d-flex gap-2 align-items-center">
+              <span class="badge bg-${p.status==1?'success':'warning'}">${p.status==1?'活跃':'过期'}</span>
+              <span class="text-muted small">${p.file_size_formatted} · ${p.view_count} 次访问</span>
+              ${p.is_public ? '<span class="badge bg-info">公开</span>' : ''}
+            </div>
+          </div>
+        </div>
+        <div class="bg-light rounded-3 p-3 mb-3">
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+            <input type="text" class="form-control font-monospace" value="${p.url}" readonly>
+            <button class="btn btn-primary" onclick="navigator.clipboard.writeText('${p.url}');showToast('已复制')"><i class="bi bi-clipboard me-1"></i>复制</button>
+          </div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="/s/${p.short_code}" target="_blank" class="btn btn-primary"><i class="bi bi-box-arrow-up-right me-1"></i>访问页面</a>
+          <button class="btn btn-outline-primary" onclick="showEdit()"><i class="bi bi-pencil me-1"></i>编辑信息</button>
+          <button class="btn btn-outline-success" onclick="showHtmlEdit()"><i class="bi bi-code-slash me-1"></i>在线编辑</button>
+          <button class="btn btn-outline-secondary" onclick="doDownload()"><i class="bi bi-download me-1"></i>下载源码</button>
+          <button class="btn btn-outline-danger" onclick="doDelete()"><i class="bi bi-trash me-1"></i>删除</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-transparent fw-semibold">作品信息</div>
+          <div class="card-body">
+            <table class="table table-sm table-borderless mb-0">
+              <tr><td class="text-muted">短码</td><td><code>${p.short_code}</code></td></tr>
+              <tr><td class="text-muted">描述</td><td>${escHtml(p.description||'无')}</td></tr>
+              <tr><td class="text-muted">标签</td><td>${escHtml(p.tags||'无')}</td></tr>
+              <tr><td class="text-muted">文件数</td><td>${p.file_count}</td></tr>
+              <tr><td class="text-muted">密码保护</td><td>${p.has_password?'是':'否'}</td></tr>
+              <tr><td class="text-muted">水印</td><td>${p.no_watermark?'已去除':'有'}</td></tr>
+              <tr><td class="text-muted">公开</td><td>${p.is_public?'是':'否'}</td></tr>
+              <tr><td class="text-muted">过期时间</td><td>${p.expires_at||'永不过期'}</td></tr>
+              <tr><td class="text-muted">创建时间</td><td>${p.created_at}</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-transparent fw-semibold">访问统计</div>
+          <div class="card-body text-center">
+            <div class="row">
+              <div class="col-4"><div class="stat-value" id="total-views">-</div><div class="stat-label">总访问量</div></div>
+              <div class="col-4"><div class="stat-value" id="today-views">-</div><div class="stat-label">今日访问</div></div>
+              <div class="col-4"><div class="stat-value" id="total-uv">-</div><div class="stat-label">独立访客</div></div>
+            </div>
+            <div class="mt-2 small text-muted" id="daily-remaining-text" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  apiGet('/api/projects.php?action=detail_stats&id=' + projectId).then(d => {
+    if (d.code === 0) {
+      document.getElementById('total-views').textContent = d.data.total_views;
+      document.getElementById('today-views').textContent = d.data.today_views;
+      document.getElementById('total-uv').textContent = d.data.total_uv;
+      if (d.data.daily_remaining >= 0) {
+        const t = document.getElementById('daily-remaining-text');
+        t.textContent = '今日剩余访问次数: ' + d.data.daily_remaining + '/' + d.data.daily_limit;
+        t.style.display = '';
+      }
+    }
+  });
+
+  document.getElementById('edit-name').value = p.name;
+  document.getElementById('edit-desc').value = p.description || '';
+  document.getElementById('edit-tags').value = p.tags || '';
+  document.getElementById('edit-password').value = p.password || '';
+  document.getElementById('edit-public').checked = !!p.is_public;
+
+  // 永久保存设置
+  const permanentCheckbox = document.getElementById('edit-permanent');
+  const permanentHint = document.getElementById('edit-permanent-hint');
+  const isMember = siteInfo && (siteInfo.current_user_role === 'member' || siteInfo.current_user_role === 'admin');
+  permanentCheckbox.checked = !p.expires_at;
+  if (isMember) {
+    permanentCheckbox.disabled = false;
+    permanentHint.textContent = '勾选后作品永久保存';
+  } else {
+    permanentCheckbox.disabled = true;
+    permanentHint.textContent = '非会员无法设置永久，请开通会员';
+  }
+}
+
+function showEdit() { new bootstrap.Modal(document.getElementById('editModal')).show(); }
+
+async function showHtmlEdit() {
+  try {
+    const res = await apiGet('/api/projects.php?action=get_html&id=' + projectId);
+    if (res.code === 0) {
+      const modal = new bootstrap.Modal(document.getElementById('htmlModal'));
+      modal.show();
+      setTimeout(() => initHtmlEditor(res.data.content), 200);
+    } else {
+      showAlert('加载失败', res.message || '加载HTML内容失败');
+    }
+  } catch (e) { showAlert('加载失败', '加载HTML内容失败'); }
+}
+
+async function doSaveHtml() {
+  const content = codeEditor ? codeEditor.getValue() : '';
+  const res = await apiPost('/api/projects.php?action=update', { id: projectId, content: content });
+  if (res.code === 0) { showToast('保存成功'); bootstrap.Modal.getInstance(document.getElementById('htmlModal')).hide(); loadProject(); }
+  else showAlert('保存失败', res.message);
+}
+
+async function doUpdate() {
+  const isPermanent = document.getElementById('edit-permanent').checked;
+  const isMember = siteInfo && (siteInfo.current_user_role === 'member' || siteInfo.current_user_role === 'admin');
+  if (isPermanent && !isMember) {
+    showAlert('提示', '非会员无法设置永久保存，请先开通会员');
+    return;
+  }
+  const res = await apiPost('/api/projects.php?action=update', {
+    id: projectId,
+    name: document.getElementById('edit-name').value.trim(),
+    description: document.getElementById('edit-desc').value.trim(),
+    tags: document.getElementById('edit-tags').value.trim(),
+    password: document.getElementById('edit-password').value.trim(),
+    is_permanent: isPermanent ? 1 : 0,
+    is_public: document.getElementById('edit-public').checked ? 1 : 0,
+  });
+  if (res.code === 0) { showToast('更新成功'); bootstrap.Modal.getInstance(document.getElementById('editModal')).hide(); loadProject(); }
+  else showAlert('更新失败', res.message);
+}
+
+async function doDownload() {
+  try {
+    const res = await fetch('/api/projects.php?action=download&id=' + projectId, {
+      headers: { 'Authorization': 'Bearer ' + getToken() }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showAlert('下载失败', err.message || '下载失败');
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (projectData.name || 'project') + '.zip';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    showAlert('下载失败', '网络错误');
+  }
+}
+
+async function doDelete() {
+  showConfirm('删除作品', '确定要删除此作品吗？此操作不可恢复。', '删除', async () => {
+    const res = await apiPost('/api/projects.php?action=delete', { id: projectId });
+    if (res.code === 0) { showToast('删除成功'); window.location.href = '/projects.html'; }
+    else showAlert('删除失败', res.message);
+  });
+}
+
+// 初始化
+if (!getToken()) window.location.href = '/login.html';
+(async () => {
+  siteInfo = await loadSiteInfo();
+  document.title = '作品详情 - ' + (siteInfo.site_name || 'TempWeb');
+  loadProject();
+})();
+</script>
+</body>
+</html>

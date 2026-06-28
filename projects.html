@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我的作品 - TempWeb</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="/assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+  <div class="container" style="max-width:1200px">
+    <a class="navbar-brand fw-bold" href="/index.html"><span class="brand-icon">T</span> <span id="nav-site-name">TempWeb</span></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" href="/index.html">首页</a></li>
+        <li class="nav-item"><a class="nav-link active" href="/projects.html">我的作品</a></li>
+        <li class="nav-item"><a class="nav-link" href="/square.html">作品广场</a></li>
+      </ul>
+      <div class="d-flex align-items-center gap-2" id="nav-auth"></div>
+    </div>
+  </div>
+</nav>
+
+
+<div class="container py-4" style="max-width:1200px">
+  <div class="row g-4">
+    <!-- 左侧：作品列表 -->
+    <div class="col-lg-8">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">我的作品</h3>
+        <a href="/index.html#upload-section" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>上传新作品</a>
+      </div>
+
+      <!-- 统计卡片 -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="stat-card"><div class="stat-value" id="s-active">0</div><div class="stat-label">活跃作品</div></div></div>
+        <div class="col-md-3"><div class="stat-card"><div class="stat-value" id="s-views">0</div><div class="stat-label">总访问量</div></div></div>
+        <div class="col-md-3"><div class="stat-card"><div class="stat-value" id="s-storage">0</div><div class="stat-label">存储使用</div></div></div>
+        <div class="col-md-3"><div class="stat-card"><div class="stat-value" id="s-quota">0</div><div class="stat-label">存储配额</div></div></div>
+      </div>
+
+      <!-- 搜索 -->
+      <div class="d-flex gap-2 mb-3">
+        <input type="text" class="form-control" style="max-width:280px;" id="search-keyword" placeholder="搜索作品名称...">
+        <select class="form-select" style="max-width:120px;" id="search-status">
+          <option value="">全部</option><option value="1">活跃</option><option value="2">已过期</option>
+        </select>
+        <button class="btn btn-primary" onclick="loadProjects()"><i class="bi bi-search"></i></button>
+      </div>
+
+      <!-- 作品列表 -->
+      <div id="project-list"></div>
+      <div id="empty-state" class="text-center py-5" style="display:none">
+        <i class="bi bi-folder2-open display-1 text-muted"></i>
+        <p class="text-muted mt-2">还没有作品，去上传第一个</p>
+        <a href="/index.html#upload-section" class="btn btn-primary">开始上传</a>
+      </div>
+
+      <!-- 分页 -->
+      <nav id="pagination" class="mt-3"></nav>
+    </div>
+
+    <!-- 右侧：用户信息 + 会员 -->
+    <div class="col-lg-4">
+      <!-- 用户信息 -->
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width:48px;height:48px;font-size:20px;" id="user-avatar">U</div>
+            <div>
+              <h5 class="fw-bold mb-1" id="user-name">-</h5>
+              <span class="badge bg-secondary" id="user-role">普通用户</span>
+            </div>
+          </div>
+          <table class="table table-sm table-borderless mb-0">
+            <tr><td class="text-muted">邮箱</td><td id="user-email">-</td></tr>
+            <tr><td class="text-muted">会员到期</td><td id="user-member-exp">未开通</td></tr>
+          </table>
+          <div class="mt-2">
+            <div class="d-flex justify-content-between small text-muted mb-1"><span>存储空间</span><span id="storage-pct">0%</span></div>
+            <div class="storage-bar"><div class="storage-fill" id="storage-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 会员卡密激活 -->
+      <div class="card border-0 shadow-sm mb-3" id="member-card">
+        <div class="card-body p-3">
+          <h6 class="fw-bold mb-3 text-success"><i class="bi bi-crown me-1 text-warning"></i>会员卡密激活</h6>
+          <div class="row g-2 mb-2">
+            <div class="col-6"><div class="benefit-item text-success"><i class="bi bi-check2 me-1"></i>作品永久保存</div></div>
+            <div class="col-6"><div class="benefit-item text-success"><i class="bi bi-check2 me-1"></i>更大存储空间</div></div>
+            <div class="col-6"><div class="benefit-item text-success"><i class="bi bi-check2 me-1"></i>去除水印</div></div>
+            <div class="col-6"><div class="benefit-item text-success"><i class="bi bi-check2 me-1"></i>更大文件限制</div></div>
+          </div>
+          <div class="d-flex gap-2">
+            <input type="text" class="form-control form-control-sm" id="code-input" placeholder="输入会员卡密">
+            <button class="btn btn-success btn-sm" onclick="doActivateCode()">激活</button>
+            <a href="#" id="purchase-btn" class="btn btn-outline-success btn-sm" target="_blank" style="display:none">购买</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 公告卡片 -->
+      <div class="card border-0 shadow-sm mb-3" id="announcement-card" style="display:none">
+        <div class="card-body p-3">
+          <h6 class="fw-bold mb-2"><i class="bi bi-megaphone me-1 text-success"></i>系统公告</h6>
+          <div id="announcement-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/assets/js/api.js"></script>
+<script src="/assets/js/app.js"></script>
+<script>
+if (!getToken()) window.location.href = '/login.html';
+
+let currentPage = 1;
+let siteInfo = {};
+
+// 加载站点信息和用户信息
+async function loadInit() {
+  siteInfo = await loadSiteInfo();
+  const name = siteInfo.site_name || 'TempWeb';
+  document.title = '我的作品 - ' + name;
+  document.getElementById('nav-site-name').textContent = name;
+  // 加载购买链接
+  if (siteInfo.member_purchase_url) {
+    const btn = document.getElementById('purchase-btn');
+    btn.href = siteInfo.member_purchase_url;
+    btn.style.display = '';
+  }
+
+  // 加载用户信息
+  const userRes = await apiGet('/api/auth.php?action=me');
+  if (userRes.code === 0) {
+    const u = userRes.data;
+    document.getElementById('user-avatar').textContent = u.username.charAt(0).toUpperCase();
+    document.getElementById('user-name').textContent = u.username;
+    document.getElementById('user-email').textContent = u.email || '-';
+    document.getElementById('user-role').textContent = u.role === 'admin' ? '管理员' : (u.role === 'member' ? '会员' : '普通用户');
+    document.getElementById('user-role').className = 'badge bg-' + (u.role === 'admin' ? 'danger' : (u.role === 'member' ? 'success' : 'secondary'));
+    document.getElementById('user-member-exp').textContent = u.member_expires_at || '未开通';
+    document.getElementById('s-storage').textContent = u.storage_used_formatted || '0 B';
+    document.getElementById('s-quota').textContent = u.storage_quota_formatted || '0 B';
+    const pct = u.storage_quota ? Math.round(u.storage_used / u.storage_quota * 100) : 0;
+    document.getElementById('storage-pct').textContent = pct + '%';
+    document.getElementById('storage-fill').style.width = pct + '%';
+  }
+
+  // 加载作品统计
+  const statsRes = await apiGet('/api/projects.php?action=stats');
+  if (statsRes.code === 0) {
+    document.getElementById('s-active').textContent = statsRes.data.active;
+    document.getElementById('s-views').textContent = statsRes.data.views;
+  }
+
+  // 加载公告（显示为卡片）
+  const annRes = await apiGet('/api/admin.php?action=announcements');
+  if (annRes.code === 0 && annRes.data && annRes.data.length) {
+    const list = annRes.data.filter(a => a.status == 1);
+    if (list.length) {
+      document.getElementById('announcement-list').innerHTML = list.map(a => `
+        <div class="mb-2 pb-2 border-bottom">
+          <div class="fw-semibold small">${escHtml(a.title)}</div>
+          ${a.content ? `<div class="small text-muted mt-1">${escHtml(a.content)}</div>` : ''}
+        </div>
+      `).join('');
+      document.getElementById('announcement-card').style.display = '';
+    }
+  }
+
+  loadProjects();
+}
+
+async function loadProjects() {
+  const keyword = document.getElementById('search-keyword').value;
+  const status = document.getElementById('search-status').value;
+  const res = await apiGet(`/api/projects.php?action=list&page=${currentPage}&pageSize=10&keyword=${encodeURIComponent(keyword)}&status=${status}`);
+  if (res.code === 0) {
+    renderProjects(res.data.list);
+    renderPagination(res.data.total, res.data.page, res.data.pageSize);
+  }
+}
+
+function renderProjects(list) {
+  const el = document.getElementById('project-list');
+  const empty = document.getElementById('empty-state');
+  if (!list.length) { el.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  el.innerHTML = list.map(p => {
+    const expireText = p.expires_at ? new Date(p.expires_at).toLocaleDateString('zh-CN') : '永久';
+    const isExpired = p.status == 2;
+    const visitRemaining = p.daily_visit_remaining >= 0 ? `<span class="badge bg-info">今日剩余${p.daily_visit_remaining}次</span>` : '';
+    return `
+    <div class="card border-0 shadow-sm mb-2">
+      <div class="card-body p-3">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-3 flex-grow-1 min-w-0">
+            <i class="bi bi-file-earmark-code fs-4 text-muted"></i>
+            <div class="min-w-0">
+              <div class="fw-semibold text-truncate">${escHtml(p.name)}</div>
+              <div class="d-flex gap-2 align-items-center flex-wrap small text-muted">
+                <span class="badge bg-${p.status==1?'success':p.status==2?'warning':'danger'}">${p.status==1?'活跃':p.status==2?'过期':'违规'}</span>
+                <span><i class="bi bi-clock me-1"></i>${isExpired ? '已过期' : expireText}</span>
+                <span>${p.file_size_formatted}</span>
+                <span>${p.view_count} 次访问</span>
+                ${visitRemaining}
+                ${p.password ? '<span class="badge bg-secondary"><i class="bi bi-lock me-1"></i>密码</span>' : ''}
+                ${p.is_public ? '<span class="badge bg-info">公开</span>' : ''}
+              </div>
+            </div>
+          </div>
+          <div class="d-flex gap-1 flex-shrink-0">
+            <a href="/s/${p.short_code}" target="_blank" class="btn btn-sm btn-outline-secondary" title="访问"><i class="bi bi-box-arrow-up-right"></i></a>
+            <a href="/project-detail.html?id=${p.id}" class="btn btn-sm btn-outline-primary" title="详情"><i class="bi bi-eye"></i></a>
+            <button class="btn btn-sm btn-outline-danger" onclick="doDelete(${p.id},'${escHtml(p.name)}')" title="删除"><i class="bi bi-trash"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `}).join('');
+}
+
+function renderPagination(total, page, pageSize) {
+  const pages = Math.ceil(total / pageSize);
+  if (pages <= 1) { document.getElementById('pagination').innerHTML = ''; return; }
+  let html = '<ul class="pagination justify-content-center">';
+  for (let i = 1; i <= pages; i++) {
+    html += `<li class="page-item ${i===page?'active':''}"><a class="page-link" href="#" onclick="currentPage=${i};loadProjects();return false;">${i}</a></li>`;
+  }
+  html += '</ul>';
+  document.getElementById('pagination').innerHTML = html;
+}
+
+async function doDelete(id, name) {
+  showConfirm('删除作品', `确定要删除作品"${name}"吗？此操作不可恢复。`, '删除', async () => {
+    const res = await apiPost('/api/projects.php?action=delete', { id });
+    if (res.code === 0) { showToast('删除成功'); loadProjects(); } else showAlert('删除失败', res.message);
+  });
+}
+
+async function doActivateCode() {
+  const code = document.getElementById('code-input').value.trim();
+  if (!code) { showAlert('提示', '请输入卡密'); return; }
+  const res = await apiPost('/api/payment.php?action=activate_code', { code });
+  if (res.code === 0) {
+    showToast('激活成功');
+    document.getElementById('code-input').value = '';
+    loadInit();
+  } else {
+    showAlert('激活失败', res.message);
+  }
+}
+
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML.replace(/'/g, '&#39;'); }
+
+loadInit();
+</script>
+</body>
+</html>

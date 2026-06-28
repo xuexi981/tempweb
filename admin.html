@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>管理后台 - TempWeb</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="/assets/css/style.css" rel="stylesheet">
+</head>
+<body class="admin-body">
+<div class="d-flex">
+  <!-- 侧边栏 -->
+  <div class="admin-sidebar">
+    <div class="brand"><span class="brand-icon">T</span> <span>管理后台</span></div>
+    <div class="nav-group">
+      <a class="nav-item active" onclick="switchTab('dashboard',this)"><i class="bi bi-speedometer2"></i> <span>仪表盘</span></a>
+      <a class="nav-item" onclick="switchTab('users',this)"><i class="bi bi-people"></i> <span>用户管理</span></a>
+      <a class="nav-item" onclick="switchTab('projects',this)"><i class="bi bi-folder"></i> <span>作品管理</span></a>
+      <a class="nav-item" onclick="switchTab('settings',this)"><i class="bi bi-gear"></i> <span>系统设置</span></a>
+      <a class="nav-item" onclick="switchTab('announcements',this)"><i class="bi bi-megaphone"></i> <span>公告管理</span></a>
+      <a class="nav-item" onclick="switchTab('invites',this)"><i class="bi bi-ticket-perforated"></i> <span>邀请码</span></a>
+      <a class="nav-item" onclick="switchTab('member_codes',this)"><i class="bi bi-key"></i> <span>会员卡密</span></a>
+      <a class="nav-item" onclick="switchTab('logs',this)"><i class="bi bi-journal-text"></i> <span>操作日志</span></a>
+    </div>
+    <div class="mt-auto p-3 border-top" style="border-color:#e8e8e8!important;font-size:0.75rem;color:#999">
+      <div>TempWeb v2</div>
+      <div>MIT License</div>
+    </div>
+  </div>
+
+  <!-- 主内容 -->
+  <div class="admin-main">
+    <!-- 顶部header -->
+    <div class="admin-header">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item">管理后台</li>
+          <li class="breadcrumb-item active" id="breadcrumb-active">仪表盘</li>
+        </ol>
+      </nav>
+      <div class="user-info">
+        <i class="bi bi-person-circle" style="font-size:1rem"></i>
+        <span id="header-username">管理员</span>
+        <a href="#" onclick="logout();return false;" title="退出"><i class="bi bi-box-arrow-right"></i></a>
+      </div>
+    </div>
+
+    <!-- 上方标签页（仅设置页显示） -->
+    <div class="admin-tabs" id="admin-top-tabs" style="display:none">
+      <button class="tab-item active" onclick="switchSubTab('basic',this)">基本</button>
+      <button class="tab-item" onclick="switchSubTab('upload',this)">上传</button>
+      <button class="tab-item" onclick="switchSubTab('security',this)">安全</button>
+      <button class="tab-item" onclick="switchSubTab('mail',this)">邮件</button>
+      <button class="tab-item" onclick="switchSubTab('custom',this)">自定义</button>
+    </div>
+
+    <!-- 内容区 -->
+    <div class="admin-content">
+      <!-- 仪表盘 -->
+      <div id="tab-dashboard">
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <div class="admin-stat-card stat-bg-green">
+              <i class="bi bi-folder stat-icon"></i>
+              <div class="stat-value" id="d-projects">-</div>
+              <div class="stat-label">作品总数</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="admin-stat-card stat-bg-blue">
+              <i class="bi bi-people stat-icon"></i>
+              <div class="stat-value" id="d-users">-</div>
+              <div class="stat-label">注册用户</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="admin-stat-card stat-bg-orange">
+              <i class="bi bi-eye stat-icon"></i>
+              <div class="stat-value" id="d-visits">-</div>
+              <div class="stat-label">今日访问</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="admin-stat-card stat-bg-purple">
+              <i class="bi bi-hdd stat-icon"></i>
+              <div class="stat-value" id="d-storage">-</div>
+              <div class="stat-label">存储使用</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">最近操作</div>
+          <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+              <thead><tr><th>时间</th><th>用户</th><th>操作</th><th>详情</th><th>IP</th></tr></thead>
+              <tbody id="d-logs"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="mt-2 small text-muted">PHP <span id="d-php">-</span> · 磁盘剩余: <span id="d-disk">-</span></div>
+      </div>
+
+      <!-- 用户管理 -->
+      <div id="tab-users" style="display:none">
+        <div class="d-flex gap-2 mb-3">
+          <input type="text" class="form-control" style="max-width:240px;" id="user-kw" placeholder="搜索用户">
+          <select class="form-select" style="max-width:120px;" id="user-role-filter"><option value="">全部</option><option value="admin">管理员</option><option value="member">会员</option><option value="user">普通</option></select>
+          <button class="btn btn-primary" onclick="loadUsers()">搜索</button>
+        </div>
+        <div class="card"><div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0"><thead><tr><th>ID</th><th>用户名</th><th>邮箱</th><th>角色</th><th>状态</th><th>存储</th><th>注册时间</th><th>操作</th></tr></thead><tbody id="users-body"></tbody></table>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- 作品管理 -->
+      <div id="tab-projects" style="display:none">
+        <div class="d-flex gap-2 mb-3">
+          <input type="text" class="form-control" style="max-width:240px;" id="proj-kw" placeholder="搜索作品">
+          <button class="btn btn-primary" onclick="loadAdminProjects()">搜索</button>
+        </div>
+        <div class="card"><div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0"><thead><tr><th>ID</th><th>名称</th><th>短码</th><th>用户</th><th>大小</th><th>访问</th><th>状态</th><th>操作</th></tr></thead><tbody id="proj-body"></tbody></table>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- 系统设置 -->
+      <div id="tab-settings" style="display:none">
+        <div class="tab-content" id="settings-content">
+          <div class="tab-pane fade show active" id="s-basic"><div id="settings-basic" class="card p-4"></div></div>
+          <div class="tab-pane fade" id="s-upload"><div id="settings-upload" class="card p-4"></div></div>
+          <div class="tab-pane fade" id="s-security"><div id="settings-security" class="card p-4"></div></div>
+          <div class="tab-pane fade" id="s-mail"><div id="settings-mail" class="card p-4"></div></div>
+          <div class="tab-pane fade" id="s-custom"><div id="settings-custom" class="card p-4"></div></div>
+        </div>
+        <button class="btn btn-primary mt-3 px-4" onclick="saveSettings()"><i class="bi bi-check-lg me-1"></i>保存设置</button>
+      </div>
+
+      <!-- 公告管理 -->
+      <div id="tab-announcements" style="display:none">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0">公告管理</h5>
+          <button class="btn btn-primary btn-sm" onclick="editAnnouncement(null)">新建公告</button>
+        </div>
+        <div class="card"><div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0"><thead><tr><th>ID</th><th>标题</th><th>类型</th><th>状态</th><th>操作</th></tr></thead><tbody id="ann-body"></tbody></table>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- 邀请码 -->
+      <div id="tab-invites" style="display:none">
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          <input type="number" class="form-control" style="max-width:100px;" id="inv-count" value="5" min="1" max="100" placeholder="数量">
+          <input type="number" class="form-control" style="max-width:140px;" id="inv-max" value="1" min="1" placeholder="最大使用次数">
+          <input type="number" class="form-control" style="max-width:160px;" id="inv-days" value="7" min="0" placeholder="有效天数(0=永久)">
+          <button class="btn btn-primary" onclick="createInvites()">生成邀请码</button>
+        </div>
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          <input type="text" class="form-control" style="max-width:200px;" id="inv-search" placeholder="搜索邀请码">
+          <select class="form-select" style="max-width:120px;" id="inv-status-filter">
+            <option value="">全部状态</option>
+            <option value="active">有效</option>
+            <option value="used">已用完</option>
+          </select>
+          <button class="btn btn-outline-primary" onclick="loadInvites()">筛选</button>
+        </div>
+        <div class="card"><div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0"><thead><tr><th>ID</th><th>邀请码</th><th>已用/上限</th><th>状态</th><th>过期时间</th></tr></thead><tbody id="inv-body"></tbody></table>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- 会员卡密 -->
+      <div id="tab-member_codes" style="display:none">
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          <input type="number" class="form-control" style="max-width:100px;" id="mc-count" value="5" min="1" max="100" placeholder="数量">
+          <input type="number" class="form-control" style="max-width:120px;" id="mc-days" value="30" min="1" placeholder="有效天数">
+          <button class="btn btn-primary" onclick="createMemberCodes()">生成卡密</button>
+        </div>
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          <input type="text" class="form-control" style="max-width:200px;" id="mc-search" placeholder="搜索卡密">
+          <select class="form-select" style="max-width:120px;" id="mc-status-filter">
+            <option value="">全部状态</option>
+            <option value="unused">未使用</option>
+            <option value="used">已使用</option>
+            <option value="expired">已过期</option>
+          </select>
+          <button class="btn btn-outline-primary" onclick="loadMemberCodes()">筛选</button>
+        </div>
+        <div class="card"><div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0"><thead><tr><th>ID</th><th>卡密</th><th>天数</th><th>状态</th><th>使用者</th><th>创建时间</th></tr></thead><tbody id="mc-body"></tbody></table>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- 操作日志 -->
+      <div id="tab-logs" style="display:none">
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          <input type="text" class="form-control" style="max-width:200px;" id="log-search" placeholder="搜索用户/操作">
+          <button class="btn btn-outline-primary" onclick="loadLogs()">搜索</button>
+          <button class="btn btn-outline-danger" onclick="clearLogs()">一键清除</button>
+        </div>
+        <div class="card"><div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0"><thead><tr><th>时间</th><th>用户</th><th>操作</th><th>详情</th><th>IP</th></tr></thead><tbody id="log-body"></tbody></table>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 公告编辑弹窗 -->
+<div class="modal fade" id="annModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">编辑公告</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="ann-id">
+      <div class="mb-3"><label class="form-label">标题</label><input type="text" class="form-control" id="ann-title"></div>
+      <div class="mb-3"><label class="form-label">内容</label><textarea class="form-control" id="ann-content" rows="4"></textarea></div>
+      <div class="mb-3"><label class="form-label">类型</label><select class="form-select" id="ann-type"><option value="home">首页</option><option value="global">全局</option><option value="popup">弹窗</option></select></div>
+      <div class="mb-3"><label class="form-label">状态</label><select class="form-select" id="ann-status"><option value="1">启用</option><option value="0">禁用</option></select></div>
+      <div class="mb-3"><label class="form-label">可关闭</label><select class="form-select" id="ann-closable"><option value="1">是</option><option value="0">否</option></select></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button><button class="btn btn-primary" onclick="saveAnnouncement()">保存</button></div>
+  </div></div>
+</div>
+
+<!-- 用户编辑弹窗 -->
+<div class="modal fade" id="userEditModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">编辑用户</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-user-id">
+      <div class="mb-3"><label class="form-label">用户名</label><input type="text" class="form-control" id="edit-user-username" disabled></div>
+      <div class="mb-3"><label class="form-label">邮箱</label><input type="email" class="form-control" id="edit-user-email"></div>
+      <div class="mb-3"><label class="form-label">角色</label><select class="form-select" id="edit-user-role"><option value="user">普通用户</option><option value="member">会员</option><option value="admin">管理员</option></select></div>
+      <div class="mb-3"><label class="form-label">存储配额(字节)</label><input type="number" class="form-control" id="edit-user-quota"></div>
+      <div class="mb-3"><label class="form-label">会员到期时间</label><input type="datetime-local" class="form-control" id="edit-user-expires"></div>
+      <div class="mb-3"><label class="form-label">状态</label><select class="form-select" id="edit-user-status"><option value="1">正常</option><option value="0">禁用</option></select></div>
+      <div class="mb-3"><label class="form-label">新密码(留空不修改)</label><input type="password" class="form-control" id="edit-user-password" placeholder="输入新密码"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button><button class="btn btn-primary" onclick="saveUser()">保存</button></div>
+  </div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/assets/js/api.js"></script>
+<script>
+if (!getToken()) window.location.href = '/login.html';
+apiGet('/api/auth.php?action=me').then(d => {
+  if (d.code !== 0 || d.data.role !== 'admin') window.location.href = '/';
+  else document.getElementById('header-username').textContent = d.data.username || '管理员';
+});
+
+function logout() { localStorage.removeItem('tw_token'); localStorage.removeItem('tw_user'); window.location.href = '/'; }
+
+let currentSettings = {};
+const tabNames = { dashboard:'仪表盘', users:'用户管理', projects:'作品管理', settings:'系统设置', announcements:'公告管理', invites:'邀请码', member_codes:'会员卡密', logs:'操作日志' };
+
+function switchTab(tab, el) {
+  document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display = 'none');
+  document.getElementById('tab-' + tab).style.display = '';
+  document.querySelectorAll('.admin-sidebar .nav-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('breadcrumb-active').textContent = tabNames[tab] || tab;
+  // 上方标签页
+  document.getElementById('admin-top-tabs').style.display = (tab === 'settings') ? 'flex' : 'none';
+  if (tab === 'dashboard') loadDashboard();
+  else if (tab === 'users') loadUsers();
+  else if (tab === 'projects') loadAdminProjects();
+  else if (tab === 'settings') loadSettings();
+  else if (tab === 'announcements') loadAnnouncements();
+  else if (tab === 'invites') loadInvites();
+  else if (tab === 'member_codes') loadMemberCodes();
+  else if (tab === 'logs') loadLogs();
+}
+
+function switchSubTab(group, el) {
+  document.querySelectorAll('#settings-content .tab-pane').forEach(p => { p.classList.remove('show','active'); });
+  const pane = document.getElementById('s-' + group);
+  if (pane) pane.classList.add('show','active');
+  document.querySelectorAll('.admin-tabs .tab-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+// 仪表盘
+async function loadDashboard() {
+  const d = await apiGet('/api/admin.php?action=dashboard');
+  if (d.code === 0) {
+    document.getElementById('d-projects').textContent = d.data.project_count;
+    document.getElementById('d-users').textContent = d.data.user_count;
+    document.getElementById('d-visits').textContent = d.data.today_visits;
+    document.getElementById('d-storage').textContent = d.data.storage_used_formatted;
+    document.getElementById('d-disk').textContent = d.data.disk_free;
+    document.getElementById('d-php').textContent = d.data.php_version || '-';
+    document.getElementById('d-logs').innerHTML = (d.data.recent_logs || []).map(l => `<tr><td>${l.created_at}</td><td>${l.username||'-'}</td><td>${l.action}</td><td>${l.detail||'-'}</td><td>${l.ip}</td></tr>`).join('') || '<tr><td colspan="5" class="text-center text-muted">暂无</td></tr>';
+  }
+}
+
+// 用户管理
+async function loadUsers() {
+  const kw = document.getElementById('user-kw').value;
+  const role = document.getElementById('user-role-filter').value;
+  const d = await apiGet(`/api/admin.php?action=users&page=1&pageSize=50&keyword=${encodeURIComponent(kw)}&role=${role}`);
+  if (d.code === 0) {
+    document.getElementById('users-body').innerHTML = d.data.list.map(u => `<tr>
+      <td>${u.id}</td><td>${esc(u.username)}</td><td>${esc(u.email)}</td>
+      <td><span class="badge bg-${u.role==='admin'?'danger':u.role==='member'?'warning':'secondary'}">${u.role}</span></td>
+      <td><span class="badge bg-${u.status?'success':'danger'}">${u.status?'正常':'禁用'}</span></td>
+      <td>${u.storage_used_formatted}</td><td>${u.created_at}</td>
+      <td><button class="btn btn-sm btn-outline-primary" onclick="editUser(${u.id})"><i class="bi bi-pencil"></i></button>
+      <button class="btn btn-sm btn-outline-${u.role==='member'?'secondary':'warning'}" onclick="toggleRole(${u.id})">${u.role==='member'?'取消会员':'设为会员'}</button>
+      <button class="btn btn-sm btn-outline-${u.status?'warning':'success'}" onclick="toggleStatus(${u.id})">${u.status?'禁用':'启用'}</button>
+      <button class="btn btn-sm btn-outline-danger" onclick="delUser(${u.id})">删除</button></td>
+    </tr>`).join('') || '<tr><td colspan="8" class="text-center text-muted">暂无</td></tr>';
+  }
+}
+
+async function editUser(id) {
+  const d = await apiGet('/api/admin.php?action=user_detail&id=' + id);
+  if (d.code !== 0) { showAlert('错误', '获取用户信息失败'); return; }
+  const u = d.data;
+  document.getElementById('edit-user-id').value = u.id;
+  document.getElementById('edit-user-username').value = u.username;
+  document.getElementById('edit-user-email').value = u.email;
+  document.getElementById('edit-user-role').value = u.role;
+  document.getElementById('edit-user-quota').value = u.storage_quota;
+  document.getElementById('edit-user-expires').value = u.member_expires_at ? u.member_expires_at.replace(' ', 'T') : '';
+  document.getElementById('edit-user-status').value = u.status;
+  document.getElementById('edit-user-password').value = '';
+  new bootstrap.Modal(document.getElementById('userEditModal')).show();
+}
+
+async function saveUser() {
+  const id = document.getElementById('edit-user-id').value;
+  const data = {
+    id: id,
+    email: document.getElementById('edit-user-email').value,
+    role: document.getElementById('edit-user-role').value,
+    storage_quota: parseInt(document.getElementById('edit-user-quota').value) || 0,
+    member_expires_at: document.getElementById('edit-user-expires').value || null,
+    status: parseInt(document.getElementById('edit-user-status').value),
+  };
+  const pwd = document.getElementById('edit-user-password').value;
+  if (pwd) data.password = pwd;
+  const res = await apiPost('/api/admin.php?action=update_user', data);
+  if (res.code === 0) { bootstrap.Modal.getInstance(document.getElementById('userEditModal')).hide(); showToast('保存成功'); loadUsers(); }
+  else showAlert('保存失败', res.message);
+}
+
+async function toggleRole(id) { await apiPost('/api/admin.php?action=toggle_user_role', {id}); loadUsers(); }
+async function toggleStatus(id) { await apiPost('/api/admin.php?action=toggle_user_status', {id}); loadUsers(); }
+async function delUser(id) { showConfirm('删除用户', '确定要删除此用户吗？此操作不可恢复。', '删除', async () => { await apiPost('/api/admin.php?action=delete_user', {id}); loadUsers(); }); }
+
+// 作品管理
+async function loadAdminProjects() {
+  const kw = document.getElementById('proj-kw').value;
+  const d = await apiGet(`/api/admin.php?action=projects&page=1&pageSize=50&keyword=${encodeURIComponent(kw)}`);
+  if (d.code === 0) {
+    document.getElementById('proj-body').innerHTML = d.data.list.map(p => `<tr>
+      <td>${p.id}</td><td>${esc(p.name)}</td><td><code>${p.short_code}</code></td><td>${p.username||'游客'}</td>
+      <td>${p.file_size_formatted}</td><td>${p.view_count}</td>
+      <td><span class="badge bg-${p.status==1?'success':p.status==2?'warning':'danger'}">${p.status==1?'活跃':p.status==2?'过期':'违规'}</span></td>
+      <td><a href="/s/${p.short_code}" target="_blank" class="btn btn-sm btn-outline-info">访问</a>
+      <button class="btn btn-sm btn-outline-primary" onclick="editProject(${p.id})">编辑</button>
+      <button class="btn btn-sm btn-outline-danger" onclick="delProject(${p.id})">删除</button></td>
+    </tr>`).join('') || '<tr><td colspan="8" class="text-center text-muted">暂无</td></tr>';
+  }
+}
+async function delProject(id) { showConfirm('删除作品', '确定要删除此作品吗？此操作不可恢复。', '删除', async () => { await apiPost('/api/admin.php?action=delete_project', {id}); loadAdminProjects(); }); }
+
+async function editProject(id) {
+  const d = await apiGet('/api/admin.php?action=get_project&id=' + id);
+  if (d.code !== 0) { showAlert('错误', d.message); return; }
+  const p = d.data;
+  const isPermanent = !p.expires_at;
+  const expireDays = p.expires_at ? Math.max(1, Math.ceil((strtotime(p.expires_at) - Date.now()/1000) / 86400)) : 7;
+  const html = `
+    <div class="mb-3"><label class="form-label">名称</label><input type="text" class="form-control" id="ep-name" value="${esc(p.name)}"></div>
+    <div class="mb-3"><label class="form-label">描述</label><textarea class="form-control" id="ep-desc" rows="2">${esc(p.description||'')}</textarea></div>
+    <div class="mb-3"><label class="form-label">标签</label><input type="text" class="form-control" id="ep-tags" value="${esc(p.tags||'')}"></div>
+    <div class="mb-3"><label class="form-label">访问密码</label><input type="text" class="form-control" id="ep-password" value="${esc(p.password||'')}"></div>
+    <div class="mb-3 form-check form-switch"><input class="form-check-input" type="checkbox" id="ep-public" ${p.is_public?'checked':''}><label class="form-check-label" for="ep-public">公开作品</label></div>
+    <div class="mb-3 form-check form-switch"><input class="form-check-input" type="checkbox" id="ep-permanent" ${isPermanent?'checked':''} onchange="document.getElementById('ep-days-wrap').style.display=this.checked?'none':'block'"><label class="form-check-label" for="ep-permanent">永久保存</label></div>
+    <div class="mb-3" id="ep-days-wrap" style="display:${isPermanent?'none':'block'}"><label class="form-label">保存天数</label><input type="number" class="form-control" id="ep-days" value="${expireDays}" min="1"></div>
+    <div class="mb-3"><label class="form-label">状态</label><select class="form-select" id="ep-status"><option value="1" ${p.status==1?'selected':''}>活跃</option><option value="2" ${p.status==2?'selected':''}>过期</option><option value="3" ${p.status==3?'selected':''}>违规</option></select></div>
+  `;
+  showAlert('编辑作品', html, async () => {
+    const data = {
+      id: id,
+      name: document.getElementById('ep-name').value,
+      description: document.getElementById('ep-desc').value,
+      tags: document.getElementById('ep-tags').value,
+      password: document.getElementById('ep-password').value,
+      is_public: document.getElementById('ep-public').checked ? 1 : 0,
+      is_permanent: document.getElementById('ep-permanent').checked ? 1 : 0,
+      expires_days: parseInt(document.getElementById('ep-days').value) || 7,
+      status: parseInt(document.getElementById('ep-status').value),
+    };
+    const res = await apiPost('/api/admin.php?action=update_project', data);
+    if (res.code === 0) { showToast('更新成功'); loadAdminProjects(); }
+    else showAlert('更新失败', res.message);
+  });
+}
+
+function strtotime(dateStr) {
+  return new Date(dateStr).getTime() / 1000;
+}
+
+// 系统设置
+const settingsFields = {
+  basic: [
+    {key:'site_name',label:'站点名称',type:'text'},
+    {key:'site_desc',label:'站点描述',type:'textarea'},
+    {key:'site_url',label:'站点URL',type:'text'},
+    {key:'site_keywords',label:'站点关键词',type:'text'},
+    {key:'site_logo',label:'站点Logo URL',type:'text'},
+    {key:'admin_email',label:'管理员邮箱',type:'text'},
+    {key:'allow_register',label:'允许注册',type:'switch'},
+    {key:'require_invite',label:'注册需邀请码',type:'switch'},
+    {key:'allow_guest_upload',label:'游客上传',type:'switch'},
+    {key:'maintenance_mode',label:'维护模式',type:'switch'},
+    {key:'maintenance_msg',label:'维护提示',type:'text'},
+    {key:'footer_links',label:'友情链接(一行一个，格式:名称|URL)',type:'textarea',placeholder:'GitHub|https://github.com\nBootstrap|https://getbootstrap.com\nMDN|https://developer.mozilla.org'},
+    {key:'member_purchase_url',label:'会员购买链接',type:'text',placeholder:'https://example.com/buy'},
+  ],
+  upload: [
+    {key:'max_file_size_guest',label:'游客文件上限(字节)',type:'number'},
+    {key:'max_file_size',label:'用户文件上限(字节)',type:'number'},
+    {key:'max_file_size_member',label:'会员文件上限(字节)',type:'number'},
+    {key:'storage_quota',label:'用户存储配额(字节)',type:'number'},
+    {key:'storage_quota_member',label:'会员存储配额(字节)',type:'number'},
+    {key:'allowed_types',label:'允许的文件类型',type:'text'},
+    {key:'banned_files',label:'禁止的文件名',type:'text'},
+    {key:'max_zip_files',label:'ZIP最大文件数',type:'number'},
+    {key:'max_zip_size',label:'ZIP单文件上限(字节)',type:'number'},
+    {key:'default_expire_guest',label:'游客保存天数',type:'number'},
+    {key:'default_expire',label:'注册用户保存天数',type:'number'},
+    {key:'default_expire_member',label:'会员保存天数',type:'number'},
+    {key:'short_code_length',label:'短码长度',type:'number'},
+    {key:'watermark',label:'启用水印',type:'switch'},
+    {key:'watermark_text',label:'水印文字',type:'text'},
+    {key:'watermark_style',label:'水印样式',type:'select',options:[{v:'single',l:'单条(右下角)'},{v:'tiled',l:'平铺'}]},
+    {key:'watermark_link',label:'水印点击跳转网址',type:'text'},
+    {key:'non_member_daily_limit',label:'非会员作品每日访问限制(0=不限)',type:'number'},
+    {key:'auto_cleanup',label:'自动清理过期',type:'switch'},
+  ],
+  security: [
+    {key:'captcha_login',label:'登录验证码',type:'switch'},
+    {key:'captcha_register',label:'注册验证码',type:'switch'},
+    {key:'rate_limit_upload',label:'上传频率(次/分)',type:'number'},
+    {key:'rate_limit_api',label:'API频率(次/分)',type:'number'},
+    {key:'anti_hotlink',label:'防盗链',type:'switch'},
+    {key:'hotlink_whitelist',label:'防盗链白名单',type:'text'},
+    {key:'xss_filter',label:'XSS过滤',type:'switch'},
+    {key:'sensitive_words',label:'敏感词',type:'textarea'},
+    {key:'ban_ips',label:'封禁IP',type:'textarea'},
+    {key:'allow_custom_domain',label:'允许自定义域名',type:'switch'},
+    {key:'upload_password',label:'上传密码',type:'text'},
+  ],
+  mail: [
+    {key:'smtp_host',label:'SMTP主机',type:'text'},
+    {key:'smtp_port',label:'SMTP端口',type:'number'},
+    {key:'smtp_user',label:'SMTP用户名',type:'text'},
+    {key:'smtp_pass',label:'SMTP密码',type:'password'},
+    {key:'smtp_ssl',label:'使用SSL',type:'switch'},
+    {key:'mail_from',label:'发件人地址',type:'text'},
+    {key:'mail_from_name',label:'发件人名称',type:'text'},
+    {key:'email_verify',label:'邮箱验证',type:'switch'},
+    {key:'mail_forgot',label:'忘记密码',type:'switch'},
+    {key:'mail_expire_notify',label:'过期提醒天数',type:'number'},
+  ],
+  custom: [
+    {key:'custom_css',label:'全局CSS',type:'textarea'},
+    {key:'custom_js',label:'全局JS',type:'textarea'},
+    {key:'custom_head',label:'自定义<head>',type:'textarea'},
+    {key:'custom_home_html',label:'首页自定义HTML',type:'textarea'},
+  ],
+};
+
+async function loadSettings() {
+  // 重置上方标签页
+  document.querySelectorAll('.admin-tabs .tab-item').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.querySelectorAll('#settings-content .tab-pane').forEach((p,i) => { p.classList.toggle('show', i===0); p.classList.toggle('active', i===0); });
+  const d = await apiGet('/api/admin.php?action=get_settings');
+  if (d.code !== 0) return;
+  currentSettings = d.data;
+  for (const [group, fields] of Object.entries(settingsFields)) {
+    const container = document.getElementById('settings-' + group);
+    if (!container) continue;
+    const values = d.data[group] || {};
+    let html = '';
+    for (const f of fields) {
+      let val = values[f.key] || '';
+      // 友情链接：JSON转行格式显示
+      if (f.key === 'footer_links' && val) {
+        try { val = JSON.parse(val).map(l => l.name + '|' + l.url).join('\n'); } catch (e) {}
+      }
+      html += `<div class="mb-3"><label class="form-label">${f.label}</label>`;
+      if (f.type === 'textarea') html += `<textarea class="form-control" data-group="${group}" data-key="${f.key}" rows="3" ${f.placeholder?'placeholder="'+f.placeholder+'"':''}>${esc(val)}</textarea>`;
+      else if (f.type === 'switch') html += `<div class="form-check form-switch"><input class="form-check-input" type="checkbox" data-group="${group}" data-key="${f.key}" ${val==='1'?'checked':''}></div>`;
+      else if (f.type === 'select') html += `<select class="form-select" data-group="${group}" data-key="${f.key}">${f.options.map(o=>`<option value="${o.v}" ${val===o.v?'selected':''}>${o.l}</option>`).join('')}</select>`;
+      else if (f.type === 'number') html += `<input type="number" class="form-control" data-group="${group}" data-key="${f.key}" value="${esc(val)}">`;
+      else html += `<input type="${f.type}" class="form-control" data-group="${group}" data-key="${f.key}" value="${esc(val)}">`;
+      html += '</div>';
+    }
+    container.innerHTML = html;
+  }
+}
+
+async function saveSettings() {
+  const data = {};
+  document.querySelectorAll('[data-group][data-key]').forEach(el => {
+    const g = el.dataset.group, k = el.dataset.key;
+    if (!data[g]) data[g] = {};
+    if (el.type === 'checkbox') data[g][k] = el.checked ? '1' : '0';
+    else data[g][k] = el.value;
+  });
+  // 友情链接：行格式转JSON
+  if (data.basic && data.basic.footer_links) {
+    const lines = data.basic.footer_links.split('\n').map(l => l.trim()).filter(l => l);
+    const links = lines.map(l => {
+      const idx = l.indexOf('|');
+      return idx > 0 ? {name: l.substring(0, idx).trim(), url: l.substring(idx+1).trim()} : null;
+    }).filter(l => l);
+    data.basic.footer_links = JSON.stringify(links);
+  }
+  const res = await apiPost('/api/admin.php?action=save_settings', data);
+  if (res.code === 0) showToast('保存成功'); else showAlert('保存失败', res.message);
+}
+
+// 公告
+async function loadAnnouncements() {
+  const d = await apiGet('/api/admin.php?action=announcements_list');
+  if (d.code === 0) {
+    document.getElementById('ann-body').innerHTML = d.data.map(a => `<tr>
+      <td>${a.id}</td><td>${esc(a.title)}</td><td>${a.type}</td>
+      <td><span class="badge bg-${a.status?'success':'secondary'}">${a.status?'显示':'隐藏'}</span></td>
+      <td><button class="btn btn-sm btn-outline-primary" onclick='editAnnouncement(${JSON.stringify(a)})'>编辑</button>
+      <button class="btn btn-sm btn-outline-danger" onclick="delAnn(${a.id})">删除</button></td>
+    </tr>`).join('') || '<tr><td colspan="5" class="text-center text-muted">暂无</td></tr>';
+  }
+}
+function editAnnouncement(row) {
+  document.getElementById('ann-id').value = row ? row.id : '';
+  document.getElementById('ann-title').value = row ? row.title : '';
+  document.getElementById('ann-content').value = row ? row.content : '';
+  document.getElementById('ann-type').value = row ? row.type : 'home';
+  document.getElementById('ann-status').value = row ? row.status : 1;
+  document.getElementById('ann-closable').value = row ? row.closable : 1;
+  new bootstrap.Modal(document.getElementById('annModal')).show();
+}
+async function saveAnnouncement() {
+  const data = { id: document.getElementById('ann-id').value, title: document.getElementById('ann-title').value, content: document.getElementById('ann-content').value, type: document.getElementById('ann-type').value, status: document.getElementById('ann-status').value, closable: document.getElementById('ann-closable').value };
+  const res = await apiPost('/api/admin.php?action=save_announcement', data);
+  if (res.code === 0) { bootstrap.Modal.getInstance(document.getElementById('annModal')).hide(); loadAnnouncements(); showToast('保存成功'); } else showAlert('保存失败', res.message);
+}
+async function delAnn(id) { showConfirm('删除公告', '确定要删除此公告吗？', '删除', async () => { await apiPost('/api/admin.php?action=delete_announcement', {id}); loadAnnouncements(); }); }
+
+// 邀请码
+async function loadInvites() {
+  const d = await apiGet('/api/admin.php?action=invites');
+  if (d.code === 0) {
+    const search = (document.getElementById('inv-search')?.value || '').trim().toLowerCase();
+    const statusFilter = document.getElementById('inv-status-filter')?.value || '';
+    let list = d.data || [];
+    if (search) list = list.filter(i => i.code.toLowerCase().includes(search));
+    if (statusFilter === 'active') list = list.filter(i => i.status);
+    if (statusFilter === 'used') list = list.filter(i => !i.status);
+    document.getElementById('inv-body').innerHTML = list.map(i => `<tr>
+      <td>${i.id}</td><td><code>${i.code}</code></td><td>${i.used_count}/${i.max_uses}</td>
+      <td><span class="badge bg-${i.status?'success':'secondary'}">${i.status?'有效':'已用完'}</span></td>
+      <td>${i.expires_at||'永久'}</td>
+    </tr>`).join('') || '<tr><td colspan="5" class="text-center text-muted">暂无</td></tr>';
+  }
+}
+async function createInvites() {
+  const res = await apiPost('/api/admin.php?action=create_invites', { count: parseInt(document.getElementById('inv-count').value), max_uses: parseInt(document.getElementById('inv-max').value), expires_days: parseInt(document.getElementById('inv-days').value) });
+  if (res.code === 0) { showToast('生成成功'); loadInvites(); } else showAlert('生成失败', res.message);
+}
+
+// 会员卡密
+async function loadMemberCodes() {
+  const d = await apiGet('/api/admin.php?action=member_codes');
+  if (d.code === 0) {
+    const search = (document.getElementById('mc-search')?.value || '').trim().toLowerCase();
+    const statusFilter = document.getElementById('mc-status-filter')?.value || '';
+    let list = d.data || [];
+    if (search) list = list.filter(m => m.code.toLowerCase().includes(search) || (m.used_by_name||'').toLowerCase().includes(search));
+    if (statusFilter) list = list.filter(m => m.status === statusFilter);
+    document.getElementById('mc-body').innerHTML = list.map(m => `<tr>
+      <td>${m.id}</td><td><code>${m.code}</code></td><td>${m.days}天</td>
+      <td><span class="badge bg-${m.status==='unused'?'success':m.status==='used'?'secondary':'danger'}">${m.status==='unused'?'未使用':m.status==='used'?'已使用':'已过期'}</span></td>
+      <td>${m.used_by_name||'-'}</td><td>${m.created_at}</td>
+    </tr>`).join('') || '<tr><td colspan="6" class="text-center text-muted">暂无</td></tr>';
+  }
+}
+async function createMemberCodes() {
+  const res = await apiPost('/api/admin.php?action=create_member_codes', { count: parseInt(document.getElementById('mc-count').value), days: parseInt(document.getElementById('mc-days').value) });
+  if (res.code === 0) { showToast('生成成功'); loadMemberCodes(); } else showAlert('生成失败', res.message);
+}
+
+// 日志
+async function loadLogs() {
+  const kw = document.getElementById('log-search').value;
+  const d = await apiGet(`/api/admin.php?action=logs&page=1&pageSize=50&keyword=${encodeURIComponent(kw)}`);
+  if (d.code === 0) {
+    document.getElementById('log-body').innerHTML = d.data.list.map(l => `<tr>
+      <td>${l.created_at}</td><td>${l.username||'-'}</td><td>${l.action}</td><td>${l.detail||'-'}</td><td>${l.ip}</td>
+    </tr>`).join('') || '<tr><td colspan="5" class="text-center text-muted">暂无</td></tr>';
+  }
+}
+
+async function clearLogs() {
+  showConfirm('清除日志', '确定要清除所有操作日志吗？此操作不可恢复。', '清除', async () => {
+    const res = await apiPost('/api/admin.php?action=clear_logs');
+    if (res.code === 0) { showToast('清除成功'); loadLogs(); }
+    else showAlert('清除失败', res.message);
+  });
+}
+
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// 初始加载
+loadDashboard();
+</script>
+</body>
+</html>
